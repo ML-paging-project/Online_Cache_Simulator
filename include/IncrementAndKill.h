@@ -48,6 +48,8 @@ class Op {
   
   OpType get_type() {assert(type != Uninit); return type;}
   uint64_t get_r()  {assert(type != Uninit); return r;}
+  uint64_t get_start() {assert(type != Uninit); return start;}
+  uint64_t get_end() {assert(type == Increment); return end;}
 };
 
 // A sequence of operators defined by a projection
@@ -107,11 +109,17 @@ class IncrementAndKill: public CacheSim {
     uint64_t& prev(uint64_t i) {return prevnext[i].first;}
     // Shortcut to access next in prevnext.
     uint64_t& next(uint64_t i) {return prevnext[i].second;}
-    /* Helper dunction to get_distance_vector.
+    
+    /* Helper function to get_distance_vector.
      * Recursively (and in parallel) populates the distance vector if the 
      * projection is small enough, or calls itself with smaller projections otherwise.
      */
     void do_projections(std::vector<uint64_t>& distance_vector, ProjSequence seq);
+    
+    /* Helper function for solving a projected sequence that has a size > 1
+     * Therefore our base case can be larger so we avoid unnecessary overhead
+     */
+    void brute_force_alg(std::vector<uint64_t>& distance_vector, ProjSequence seq);
   public:
     // Logs a memory access to simulate. The order this function is called in matters.
     void memory_access(uint64_t addr);
@@ -123,3 +131,10 @@ class IncrementAndKill: public CacheSim {
     IncrementAndKill() = default;
     ~IncrementAndKill() = default;
 };
+
+/*
+Two distributions, one purely random and the other ziphian
+Zipfian: Pick ith item with probability 1 / (i ln n) or 1 / (i H(n))
+Pick random number between 1 and log n and then pick a number in 2^k-1 and 2^k
+
+*/

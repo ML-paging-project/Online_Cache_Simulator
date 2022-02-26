@@ -38,7 +38,6 @@ std::vector<std::vector<uint64_t>> working_set_simulator(uint32_t seed, bool pri
 	using std::chrono::high_resolution_clock;
 	using std::chrono::duration_cast;
 	using std::chrono::duration;
-	using std::chrono::milliseconds;
 
   LruSizesSim *lru = new LruSizesSim();
   IncrementAndKill *iak = new IncrementAndKill();
@@ -50,7 +49,7 @@ std::vector<std::vector<uint64_t>> working_set_simulator(uint32_t seed, bool pri
     lru->memory_access(get_next_addr(rand));
   }
   std::vector<uint64_t> lru_success = lru->get_success_function();
-  auto lru_time =  duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
+  auto lru_time =  duration<double>(high_resolution_clock::now() - start).count();
   
   // Increment And Kill
   rand.seed(seed);  // create random number generator
@@ -59,7 +58,7 @@ std::vector<std::vector<uint64_t>> working_set_simulator(uint32_t seed, bool pri
     iak->memory_access(get_next_addr(rand));
   }
   std::vector<uint64_t> iak_success = iak->get_success_function();
-  auto iak_time = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
+  auto iak_time = duration<double>(high_resolution_clock::now() - start).count();
 
   if (print) {
     // Do this for stats
@@ -68,7 +67,7 @@ std::vector<std::vector<uint64_t>> working_set_simulator(uint32_t seed, bool pri
     for (uint64_t i = 0; i < ACCESSES; i++) {
       unique_pages.insert(get_next_addr(rand));
     }
-    auto vec_time = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
+    auto vec_time = duration<double>(high_resolution_clock::now() - start).count();
 
     // print the success function if requested
     printf("Out of %" PRIu64 " memory accesses with %lu unique virtual pages\n",

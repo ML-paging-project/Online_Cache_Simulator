@@ -13,7 +13,7 @@ void IncrementAndKill::calculate_prevnext() {
   // then order those by access_number
   auto requestcopy = requests;
 
-  __gnu_parallel::sort(requestcopy.begin(), requestcopy.end());
+  std::sort(requestcopy.begin(), requestcopy.end());
 
   prevnext.resize(requestcopy.size() + 1);
 
@@ -60,19 +60,33 @@ std::vector<uint64_t> IncrementAndKill::get_distance_vector() {
   return distance_vector;
 }
 
+void IncrementAndKill::brute_force_alg(std::vector<uint64_t>& distance_vector, ProjSequence cur) {
+  // loop through each operation in the sequence and apply it to the distance vector
+  std::vector<bool> killed(cur.end - cur.start + 1);
+  for (auto op : cur.op_seq) {
+    assert(op.get_type() == Kill || op.get_type() == Increment);
+    
+    if (op.get_type() == Increment) {
+      // For each item in the range increment the distance vector
+      for (uint64_t i = op.get_start(); i <= op.get_end(); i++) {
+        if (!killed[i - cur.start])
+          distance_vector[i] += op.get_r();
+      }
+    } 
+    else {
+      // std::cerr << "Kill the op" << std::endl;
+      // Kill the item in question
+      killed[op.get_start() - cur.start] = true;
+    }
+  }
+}
+
 //recursively (and in parallel) perform all the projections
-void IncrementAndKill::do_projections(std::vector<uint64_t>& distance_vector, ProjSequence cur)
-{
-  // base case
-  // start == end -> d_i [operations]
-  // operations = [Inc, Kill], [Kill, Inc]
-  // if Kill, Inc, then distance = 0 -> sequence = [... p_x, p_x ...]
-  // No need to lock here-- this can only occur in exactly one thread
-  if (cur.start == cur.end) {
-      if (cur.op_seq.size() > 0 && cur.op_seq[0].get_type() == Increment)
-        distance_vector[cur.start] = cur.op_seq[0].get_r();
-      else
-        distance_vector[cur.start] = 0;
+void IncrementAndKill::do_projections(std::vector<uint64_t>& distance_vector, ProjSequence cur) {
+  // base case -- use the brute force algorithm
+  // no need for locking as projections have unique bounds
+  if (cur.end - cur.start < 64) {
+    brute_force_alg(distance_vector, cur);
   }
   else {
     uint64_t dist = cur.end - cur.start;
